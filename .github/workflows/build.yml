@@ -1,0 +1,44 @@
+name: APK Derle
+
+on:
+  push:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: android-actions/setup-android@v3
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+
+      - name: APK derle
+        env:
+          GRADLE_OPTS: -Xmx2048m -Dorg.gradle.daemon=false
+        run: |
+          yes | sdkmanager "platforms;android-34" "build-tools;34.0.0" >/dev/null 2>&1 || true
+          gradle assembleDebug --no-daemon --stacktrace
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: AgAnaliz-APK
+          path: app/build/outputs/apk/debug/app-debug.apk
+
+      - name: Release olustur
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v1-${{ github.run_number }}
+          name: "Ag Analiz APK (yapim ${{ github.run_number }})"
+          files: app/build/outputs/apk/debug/app-debug.apk
